@@ -1,6 +1,6 @@
 package Models;
 
-public class Client {
+public class Advertiser {
 
     private Packet packet;
 
