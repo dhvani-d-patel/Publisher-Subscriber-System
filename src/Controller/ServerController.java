@@ -5,6 +5,7 @@ import Models.Packet;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,8 +34,15 @@ public class ServerController {
                 Packet packet = (Packet) input.readObject();
 
                 System.out.println("Server: Client-type is "+packet.getType()+" with ID "+ packet.getGuid());
+
                 if (packet.getType().equals("Advertiser")){
                     registerTopic(packet.getTopicName());
+                } else if (packet.getType().equals("Publisher")){
+                    if (packet.getArticleContent() == null) {
+                        sendAvailableTopics();
+                    } else {
+                        publishArticleContent(packet);
+                    }
                 }
 
             }
@@ -46,7 +54,7 @@ public class ServerController {
         return true;
     }
 
-    public void registerTopic(String topicName){
+    private void registerTopic(String topicName){
         topicName = topicName.toLowerCase();
         if (!listOfTopics.contains(topicName)){
             listOfTopics.add(topicName);
@@ -65,5 +73,35 @@ public class ServerController {
             System.out.print(topicName+"\t");
         }
         System.out.println();
+    }
+
+    private void sendAvailableTopics(){
+        try {
+
+            System.out.println("Server ("+System.currentTimeMillis()+") : Trying to connect now.");
+            socket = new Socket("localhost", 4000);
+            System.out.println("Server: Connection established with Publisher.");
+            ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+
+            Packet packet = new Packet();
+            packet.setType("Server");
+            packet.setAvailableTopics(listOfTopics);
+            output.writeObject(packet);
+
+            output.close();
+            socket.close();
+
+
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void publishArticleContent(Packet packet){
+        System.out.print(packet.getTopicName() + " ");
+        System.out.println(packet.getArticleContent());
+
     }
 }
